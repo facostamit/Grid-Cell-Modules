@@ -8,17 +8,25 @@ Created on Fri Jun 26 11:47:46 2020
 import matplotlib.pyplot as plt
 import numpy as np
 
+## Creates simple periodic Kuramoto model with uniform local coupling
+
+#### Things to add: (1) Animation of system evolution, (2)  
 
 def tridiag(a,b,c,k1 = 1, k2 = 0,k3 =-1):
     return np.diag(a,k1) + np.diag(b,k2)  + np.diag(c,k3)
 
-## aperiodic interaction matrix with uniform coupling 
-def interaction_matrix(N,k):
+
+## NxN interaction matrix with uniform coupling k. Aperiodic by default (set periodic = True to make periodic) 
+def interaction_matrix(N,k,periodic = False):
     upper_diag = k*np.ones(N-1)
     diag = np.zeros(N)
     lower_diag = k*np.ones(N-1)
+    W = tridiag(upper_diag,diag,lower_diag)
+    if periodic:
+        W[0,N-1] = k
+        W[N-1,0] = k    
     
-    return tridiag(upper_diag,diag,lower_diag)
+    return W
 
 ## defines oscillator object with attributes phase ([0,2π]) and frequency
 class oscillator:
