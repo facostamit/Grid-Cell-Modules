@@ -10,7 +10,7 @@ import numpy as np
 
 ## Creates simple periodic Kuramoto model with uniform local coupling
 
-#### Things to add: (1) Animation of system evolution, (2)  
+#### Things to add: (1) Animation of system evolution, (2) Explore non-uniform oscillator coupling?
 
 def tridiag(a,b,c,k1 = 1, k2 = 0,k3 =-1):
     return np.diag(a,k1) + np.diag(b,k2)  + np.diag(c,k3)
@@ -42,8 +42,8 @@ class oscillator:
 # dt : time step width
 N = 10
 k = 0.3
-mu = 0.1
-sigma = 0.1
+freq_0 = 0.1
+freq_std = 0.1
 T = 100
 dt = 0.01
 
@@ -51,12 +51,21 @@ dt = 0.01
 W = interaction_matrix(N,k)
 
 
-## population: list of oscillators with uniform random phases and normal random frequencies
-population = []
-for i in range(N):
-    phase_i = 2*np.pi*np.random.rand()
-    freq_i = np.random.normal(mu,sigma)
-    population.append(oscillator(phase_i,freq_i))
+## creates population of oscillators with uniform random phases and frequencies drawn from a narrow normal distribution. By default, uniform mean frequency.
+##      set freq_gradient = True to introduce linear frequency gradient starting at freq_0 and ending at freq_final
+
+def create_population(N,freq_0,freq_std,freq_gradient = false,freq_final = 1):
+    population = []
+
+    for i in range(N):
+        phase_i = 2*np.pi*np.random.rand()
+        if freq_gradient:
+            freq_i = np.random.normal(freq_0+(i/(N-1))*freq_final,freq_std)
+        else:
+            freq_i = np.random.normal(freq_0,freq_std)
+        population.append(oscillator(phase_i,freq_i))
+
+    return population
     
 ## single time step update to individual oscillator according to Kuramoto model 
 def update_oscillator(i,oscillator,dt):
