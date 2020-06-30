@@ -1,17 +1,21 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Fri Jun 26 11:47:46 2020
+Created on Fri Jun 26 11:47:46 2020 
+By Francisco Acosta
 
-@author: franciscoacosta
+Simulates 1D Kuramoto model with local coupling
+
+Things to add: (1) Animation of system evolution, (2) Play around with parameters: population size, coupling, freq distribution width,
+(3) Explore non-uniform oscillator coupling (?) 
+
 """
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-## Creates simple Kuramoto model with uniform local coupling
 
-#### Things to add: (1) Animation of system evolution, (2) Play around with parameters: population size, coupling, freq distribution width,
-#### (3) Explore non-uniform oscillator coupling? ####
+
+""" ..........................Helper functions................................. """
 
 def tridiag(a,b,c,k1 = 1, k2 = 0,k3 =-1):
     return np.diag(a,k1) + np.diag(b,k2)  + np.diag(c,k3)
@@ -34,27 +38,11 @@ class oscillator:
     def __init__(self,phase,frequency):
         self.phase = phase
         self.frequency = frequency
-
-# N : number of oscillators
-# k : coupling constant
-# mu : center of frequency distribution
-# sigma : std of frequency distribution
-# T : simulation time length
-# dt : time step width
-N = 10
-k = 0.3
-freq_0 = 0.1
-freq_std = 0.1
-T = 100
-dt = 0.01
-
-## Matrix of pair-wise oscillator couplings 
-W = interaction_matrix(N,k)
-
-
-## creates population of oscillators with uniform random phases and frequencies drawn from a narrow normal distribution. By default, uniform mean frequency.
-##      set freq_gradient = True to introduce linear frequency gradient starting at freq_0 and ending at freq_final
-
+        
+## creates population of oscillators with uniform random phases and frequencies drawn from a narrow normal distribution. 
+## By default, uniform mean frequency.
+## set freq_gradient = True to introduce linear frequency gradient starting at freq_0 and ending at freq_final    
+        
 def create_population(N,freq_0,freq_std,freq_gradient = False, freq_final = 1):
     population = []
 
@@ -68,7 +56,49 @@ def create_population(N,freq_0,freq_std,freq_gradient = False, freq_final = 1):
 
     return population
 
-population = create_population(N,freq_0,freq_std)
+## Calculates order parameter r (population phase-coherence)
+def calc_order_parameter(phases):
+    n = len(phases)
+    tot = 0
+    for i in range(n):
+        tot += np.exp(1j*phases[i])
+    
+    r = (1/n)*abs(tot)
+    
+    return r
+
+
+    
+""" ..........................Simulation................................. """
+
+# N : number of oscillators
+# k : coupling constant
+# mu : center of frequency distribution
+# sigma : std of frequency distribution
+# T : simulation time length
+# dt : time step width
+N = 10
+k = 0.3
+freq_0 = 0
+freq_std = 0.01
+T = 200
+dt = 0.01
+
+
+## Matrix of pair-wise oscillator couplings 
+W = interaction_matrix(N,k,periodic = True)
+
+
+## population of N oscillators 
+population = create_population(N,freq_0,freq_std,freq_gradient=True)
+
+
+## keeps track of population pattern (phases) in time 
+system_t  = np.zeros((int(T/dt),N))
+
+
+## keeps track of system phase-coherence order parameter in time
+r_t = np.zeros(int(T/dt))
     
 ## single time step update to individual oscillator according to Kuramoto model 
 def update_oscillator(i,oscillator,dt):
@@ -78,23 +108,45 @@ def update_oscillator(i,oscillator,dt):
     oscillator.phase = oscillator.phase%(2*np.pi)
 
 
-## keeps track of population pattern in time 
-phase_t  = np.zeros((int(T/dt),N))
-
 ## Models evolution of population for time T
 def update(T,dt):
     for iter in range(int(T/dt)):
         for i in range(N):
             update_oscillator(i,population[i],dt)
-            phase_t[iter,i] = population[i].phase
-            #phase_t.append(population[i].phase)
-
+            system_t[iter,i] = population[i].phase
+        r_t[iter] = calc_order_parameter(system_t[iter,:])
 
 update(T,dt)
-plt.plot(np.linspace(0,T,round(T/dt)),phase_t)
+
+
+
+
+## Plots system & order parameter evolving in time
+plot1 = plt.figure(1)
+plt.plot(np.linspace(0,T,int(T/dt)),system_t)
 plt.title("Population Phase Evolution")
 plt.xlabel("time")
 plt.ylabel("phase")
+
+plt2 = plt.figure(2)
+plt.plot(np.linspace(0,T,int(T/dt)),r_t)
+plt.title("Population Phase Coherence Evolution")
+plt.xlabel("time")
+plt.ylabel("phase coherence r")
+plt.ylim((0,1))
+
+plt.show()
+
+
+
+## Different plots
+
+#fig, axs = plt.subplots(2,sharex = True)
+#fig.suptitle("Population Phase Evolution")
+#axs[0].plot(np.linspace(0,T,int(T/dt)), system_t)
+#axs[0].set(ylabel = "Phases")
+#axs[1].plot(np.linspace(0,T,int(T/dt)), r_t)
+#a#xs[0].ylabel("phase")
 
 
 
