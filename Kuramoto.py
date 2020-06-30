@@ -8,9 +8,10 @@ Created on Fri Jun 26 11:47:46 2020
 import matplotlib.pyplot as plt
 import numpy as np
 
-## Creates simple periodic Kuramoto model with uniform local coupling
+## Creates simple Kuramoto model with uniform local coupling
 
-#### Things to add: (1) Animation of system evolution, (2) Explore non-uniform oscillator coupling?
+#### Things to add: (1) Animation of system evolution, (2) Play around with parameters: population size, coupling, freq distribution width,
+#### (3) Explore non-uniform oscillator coupling? ####
 
 def tridiag(a,b,c,k1 = 1, k2 = 0,k3 =-1):
     return np.diag(a,k1) + np.diag(b,k2)  + np.diag(c,k3)
@@ -66,6 +67,8 @@ def create_population(N,freq_0,freq_std,freq_gradient = false,freq_final = 1):
         population.append(oscillator(phase_i,freq_i))
 
     return population
+
+population = create_population(N,freq_0,freq_std)
     
 ## single time step update to individual oscillator according to Kuramoto model 
 def update_oscillator(i,oscillator,dt):
