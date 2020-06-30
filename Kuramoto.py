@@ -55,7 +55,7 @@ W = interaction_matrix(N,k)
 ## creates population of oscillators with uniform random phases and frequencies drawn from a narrow normal distribution. By default, uniform mean frequency.
 ##      set freq_gradient = True to introduce linear frequency gradient starting at freq_0 and ending at freq_final
 
-def create_population(N,freq_0,freq_std,freq_gradient = false,freq_final = 1):
+def create_population(N,freq_0,freq_std,freq_gradient = False, freq_final = 1):
     population = []
 
     for i in range(N):
