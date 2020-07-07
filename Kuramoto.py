@@ -13,9 +13,10 @@ Things to add: (1) Animation of system evolution, (2) Play around with parameter
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.sparse import csr_matrix
+import time
 
 
-""" ..........................Helper functions................................. """
+""" ..........................Helper functions............................... """
 
 def tridiag(a,b,c,k1 = 1, k2 = 0,k3 =-1):
     return np.diag(a,k1) + np.diag(b,k2)  + np.diag(c,k3)
@@ -61,21 +62,25 @@ def create_population(N,freq_0,freq_std,freq_gradient = False, gradient = "linea
 
     return population
 
+
 ## single time step update to oscillator population according to Kuramoto model 
 def update_population(W,thetas,frequencies,dt):
     thetas += dt*(frequencies+np.cos(thetas)*(W.dot(np.sin(thetas)))-np.sin(thetas)*(W.dot(np.cos(thetas))))
     thetas = np.mod(thetas,2*np.pi)
     return thetas
 
-## Calculates numerical time derivative of phases at some specified time t
+
+## Calculates numerical time derivative of oscillator phases at all times t 
 def calc_eff_freq(system_t):
     size = np.shape(system_t)
-    eff_freqs_t = np.zeros((size[0]-1,size[1]))
+    eff_freqs_t = np.zeros((size[0]-2,size[1]))
     for t in range(1,size[0]-1):  
         eff_freqs = np.zeros(size[1])
         for i in range(size[1]):
-            eff_freqs[i] = (system_t[t+1,i]-system_t[t-1,i])/(2*dt)
-        eff_freqs_t[t,:] = eff_freqs.flatten() 
+            delta = (system_t[t+1,i]-system_t[t-1,i])%(2*np.pi)
+            diff = min(delta,2*np.pi-delta)
+            eff_freqs[i] = diff/(2*dt)
+        eff_freqs_t[t-1,:] = eff_freqs.flatten() 
     return eff_freqs_t
 
 ## Calculates order parameter r (population phase-coherence)
@@ -92,7 +97,10 @@ def calc_order_parameter(phases):
 def eff_freqs_std(eff_freqs):
     return np.std(eff_freqs)    
 
-    
+
+start_time = time.time()
+
+
 """ ..........................Simulation................................. """
 
 # N : number of oscillators
@@ -101,8 +109,8 @@ def eff_freqs_std(eff_freqs):
 # sigma : std of frequency distribution
 # T : simulation time length
 # dt : time step width
-N = 25
-k = 1.75
+N = 100
+k = 0.5
 freq_0 = 0.0
 freq_std = 0.01
 T = 200
@@ -150,12 +158,9 @@ freq_std_t = np.std(eff_freqs,axis=1)
 
 
 
-
-
-
 ## Plots system & order parameter evolving in time
 plot1 = plt.figure(1,dpi=150)
-plt.plot(np.linspace(0,T,int(T/dt)),np.cos(system_t))
+plt.plot(np.linspace(0,T,int(T/dt)),system_t)
 plt.title("Population Phase Evolution")
 plt.xlabel("time")
 plt.ylabel("phase")
@@ -169,15 +174,22 @@ plt.ylabel("phase coherence r")
 plt.ylim((0,1))
 #plt.savefig("r.png")
 
-#plot3 = plt.figure(3,dpi=100)
-#plt.plot(np.linspace(1,T-1,int(T/dt)-1),freq_std_t)
-#plt.title("Effective Frequency Standard Deviation Evolution")
-#plt.xlabel("time")
-#plt.ylabel("eff. freq. std")
+
+plot3 = plt.figure(3,dpi=150)
+plt.plot(np.linspace(1,T-1,int(T/dt)-2),eff_freqs)
+plt.title("Population Eff. Frequency Evolution")
+plt.xlabel("time")
+plt.ylabel("eff. freq.")
+
+plot4 = plt.figure(4,dpi=100)
+plt.plot(np.linspace(1,T-1,int(T/dt)-2),freq_std_t)
+plt.title("Effective Frequency Standard Deviation Evolution")
+plt.xlabel("time")
+plt.ylabel("eff. freq. std")
 
 plt.show()
 
-bins = np.linspace(-1,1,50)
+bins = np.linspace(min(-freq_0,-1),max(freq_0,1),50)
 
 plt.hist(eff_freqs[int(0.9*np.shape(system_t)[0])],bins=bins)
 plt.title("Distribution of Effective frequencies at t = 0.9*T")
@@ -203,7 +215,9 @@ plt.ylabel("proportion of oscillators")
 #freqs = [x.frequency for x in newpop]
 
 
+tot_time = time.time()-start_time
 
+print(tot_time)
 
 
 
