@@ -18,16 +18,16 @@ import time
 
 """ ..........................Helper functions............................... """
 
-def tridiag(a,b,c,k1 = 1, k2 = 0,k3 =-1):
-    return np.diag(a,k1) + np.diag(b,k2)  + np.diag(c,k3)
 
+## Creates NxN interaction matrix with local uniform coupling k. Aperiodic by default (set periodic = True to make periodic).
+## radius determines range of local interactions. By deault radius = 1 (i.e., each oscilliator interacts only with its 2 closest neighbors)
+def interaction_matrix(N,k,periodic = False, radius = 1):
+   
+    W = np.zeros((N,N))
+    for i in range(-radius,radius+1):
+        vec = (i!=0)*(k/(2**(abs(i)-1)))*np.ones(N-abs(i))
+        W += np.diag(vec,i)
 
-## NxN interaction matrix with uniform coupling k. Aperiodic by default (set periodic = True to make periodic) 
-def interaction_matrix(N,k,periodic = False):
-    upper_diag = k*np.ones(N-1)
-    diag = np.zeros(N)
-    lower_diag = k*np.ones(N-1)
-    W = tridiag(upper_diag,diag,lower_diag)
     if periodic:
         W[0,N-1] = k
         W[N-1,0] = k    
@@ -109,19 +109,19 @@ start_time = time.time()
 # sigma : std of frequency distribution
 # T : simulation time length
 # dt : time step width
-N = 100
+N = 50
 k = 0.5
 freq_0 = 0.0
 freq_std = 0.01
-T = 200
+T = 400
 dt = 0.01
 
 
 ## Matrix of pair-wise oscillator couplings 
-W = interaction_matrix(N,k,periodic = True)
+W = interaction_matrix(N,k,periodic = True,radius=10)
 
 ## population of N oscillators 
-population = create_population(N,freq_0,freq_std,freq_gradient=True)
+population = create_population(N,freq_0,freq_std,freq_gradient=True,gradient="linear")
 
 ## keeps track of population pattern (phases) in time 
 system_t  = np.zeros((int(T/dt),N))
@@ -194,30 +194,30 @@ bins = np.linspace(min(-freq_0,-1),max(freq_0,1),50)
 plt.hist(eff_freqs[int(0.9*np.shape(system_t)[0])],bins=bins)
 plt.title("Distribution of Effective frequencies at t = 0.9*T")
 plt.xlabel("frequency")
-plt.ylabel("proportion of oscillators")
+plt.ylabel("number of oscillators")
 
 
-
-## Different plots
-
-#fig, axs = plt.subplots(2,sharex = True)
-#fig.suptitle("Population Phase Evolution")
-#axs[0].plot(np.linspace(0,T,int(T/dt)), system_t)
-#axs[0].set(ylabel = "Phases")
-#axs[1].plot(np.linspace(0,T,int(T/dt)), r_t)
-#a#xs[0].ylabel("phase")
-
-
-#newpop = create_population(N,0,0.1)
-#
-#phases = [x.phase for x in newpop]
-#
-#freqs = [x.frequency for x in newpop]
 
 
 tot_time = time.time()-start_time
 
 print(tot_time)
+
+##2d pca
+#from sklearn.decomposition import PCA
+#eff_freqs.shape
+#pca = PCA(n_components=2)
+#pca.fit(eff_freqs)
+#x = pca.transform(eff_freqs)
+#x.shape
+#
+##3d pca
+#import matplotlib as mpl
+#from mpl_toolkits.mplot3d import Axes3D
+#fig = plt.figure()
+#ax = fig.gca(projection='3d')
+#indices = np.arange(x.shape[0])
+#plt.plot(x[0,1000:],x[1,1000:],x[2,1000:])
 
 
 
