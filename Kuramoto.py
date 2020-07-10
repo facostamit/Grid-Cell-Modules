@@ -9,8 +9,6 @@ Things to add: (1) Animation of system evolution, (2) Play around with parameter
 
 """
 
-
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.sparse import csr_matrix
 import time
@@ -28,10 +26,10 @@ def interaction_matrix(N,k,periodic = False, radius = 1):
         vec = (i!=0)*(k/(2**(abs(i)-1)))*np.ones(N-abs(i))
         W += np.diag(vec,i)
 
-    if periodic:
-        W[0,N-1] = k
-        W[N-1,0] = k    
-    
+        if periodic:
+            if i != 0:
+                W[0,N-abs(i)] = k/(2**abs(i)-1)
+                W[N-1,abs(i)-1] = k/(2**abs(i)-1)    
     return W
 
 ## defines oscillator object with attributes phase ([0,2π]) and frequency
@@ -39,17 +37,19 @@ class oscillator:
     def __init__(self,phase,frequency):
         self.phase = phase
         self.frequency = frequency
-    
-        
+
+
+
 ## creates population of oscillators with uniform random phases and frequencies drawn from a narrow normal distribution. 
-## By default, uniform mean frequency.
-## set freq_gradient = True to introduce linear frequency gradient starting at freq_0 and ending at freq_final    
-def create_population(N,freq_0,freq_std,freq_gradient = False, gradient = "linear", delta_freq = 1):
+## By default, uniform mean frequency (graditn = None). 
+## set gradient = "linear","quadratic", or "exp" to introduce 
+##      corresponding frequency gradient starting at freq_0 and ending at freq_final    
+def create_population(N,freq_0,freq_std, gradient = "linear", delta_freq = 1):
     population = []
 
     for i in range(N):
         phase_i = 2*np.pi*np.random.rand()
-        if freq_gradient:
+        if gradient != None:
             if gradient == "linear":
                 freq_i = freq_0+(i/(N-1))*delta_freq + np.random.normal(0,freq_std)
             if gradient == "quadratic":
@@ -63,11 +63,31 @@ def create_population(N,freq_0,freq_std,freq_gradient = False, gradient = "linea
     return population
 
 
+
 ## single time step update to oscillator population according to Kuramoto model 
 def update_population(W,thetas,frequencies,dt):
     thetas += dt*(frequencies+np.cos(thetas)*(W.dot(np.sin(thetas)))-np.sin(thetas)*(W.dot(np.cos(thetas))))
     thetas = np.mod(thetas,2*np.pi)
     return thetas
+
+
+
+## models evolution of population for time T
+def update_system(W,thetas,frequencies,T,dt):
+    
+    ## keeps track of population pattern (phases) in time 
+    system_t  = np.zeros((int(T/dt),N))
+    
+    ## keeps track of system phase-coherence order parameter in time
+    r_t = np.zeros(int(T/dt))
+    
+    for iter in range(int(T/dt)):
+        system_t[iter,:] = thetas.flatten()
+        r_t[iter] = calc_order_parameter(thetas)
+        thetas = update_population(W,thetas,frequencies,dt)
+    
+    return (system_t,r_t)
+
 
 
 ## Calculates numerical time derivative of oscillator phases at all times t 
@@ -82,6 +102,8 @@ def calc_eff_freq(system_t):
             eff_freqs[i] = diff/(2*dt)
         eff_freqs_t[t-1,:] = eff_freqs.flatten() 
     return eff_freqs_t
+
+
 
 ## Calculates order parameter r (population phase-coherence)
 def calc_order_parameter(phases):
@@ -98,110 +120,71 @@ def eff_freqs_std(eff_freqs):
     return np.std(eff_freqs)    
 
 
-start_time = time.time()
+## Runs simulation. Produces plots. 
+def simulate(N,k,radius,periodic,freq_0,delta_freq,freq_std,gradient,T,dt):
+    
+    start_time = time.time()
+    
+    ## Matrix of pair-wise oscillator couplings 
+    W = interaction_matrix(N,k,periodic = periodic,radius = radius)
+    
+    ## population of N oscillators 
+    population = create_population(N,freq_0,freq_std,gradient = gradient,delta_freq = delta_freq)
+    
+    ## Nx1 vectors containing the phase and frequency of each oscillator 
+    phases = np.array([[oscillator.phase for oscillator in population]]).T
+    frequencies = np.array([[oscillator.frequency for oscillator in population]]).T
+    
+    ## Interaction matrix in sparse format
+    W = csr_matrix(W)
+    
+    ##updates all oscillators 
+    system_t, r_t = update_system(W,phases,frequencies,T,dt)
+    
+    simulation_time = time.time() - start_time
 
-
+    ## keeps track of population effective frequencies in time
+    eff_freqs = calc_eff_freq(system_t)
+    
+    ## keeps track of standard deviation of effective frequencies in time
+    freq_std_t = np.std(eff_freqs,axis=1)
+    
+    
+    return (system_t,r_t,eff_freqs,freq_std_t,simulation_time)
+    
+    
 """ ..........................Simulation................................. """
 
+
 # N : number of oscillators
+N = 100
 # k : coupling constant
-# mu : center of frequency distribution
-# sigma : std of frequency distribution
-# T : simulation time length
-# dt : time step width
-N = 50
-k = 0.5
+k = 1
+# radius : radius of local interactions
+radius = 5
+# periodic : set to True for periodic topology, set to False for aperiodic topology
+periodic = True
+# freq_0 : initial center of frequency distribution
 freq_0 = 0.0
+# delta_freq : absolute change in frequency due to gradient. final freq = freq_0 + delta_freq
+delta_freq = 1
+# freq_std : std of frequency distribution
 freq_std = 0.01
-T = 400
+# gradient : sets functional form of population frequency gradient. gradient ∈ {None,"linear","quadratic","exponential"}
+gradient = "linear"
+# T : simulation time length
+T = 1000
+# dt : time step width
 dt = 0.01
 
+system_t,r_t,eff_freqs,freq_std_t,simulation_time = simulate(N,k,radius,periodic,freq_0,delta_freq,freq_std,gradient,T,dt)
+    
+np.savetxt('phase_evolution.dat',system_t)
+np.savetxt('phase_coherence_evolution.dat',r_t)
+np.savetxt('eff_freqs.dat',eff_freqs)
+np.savetxt('freq_std_t',freq_std_t)
+np.savetxt('simulation_time',np.array([simulation_time]))
 
-## Matrix of pair-wise oscillator couplings 
-W = interaction_matrix(N,k,periodic = True,radius=10)
-
-## population of N oscillators 
-population = create_population(N,freq_0,freq_std,freq_gradient=True,gradient="linear")
-
-## keeps track of population pattern (phases) in time 
-system_t  = np.zeros((int(T/dt),N))
-
-## keeps track of system phase-coherence order parameter in time
-r_t = np.zeros(int(T/dt))
-
-
-## Nx1 vectors containing the phase and frequency of each oscillator 
-phases = np.array([[oscillator.phase for oscillator in population]]).T
-frequencies = np.array([[oscillator.frequency for oscillator in population]]).T
-
-## Interaction matrix in sparse format
-W = csr_matrix(W)
-
-
-## models evolution of population for time T
-def update(W,thetas,frequencies,T,dt):
-    for iter in range(int(T/dt)):
-        system_t[iter,:] = thetas.flatten()
-        r_t[iter] = calc_order_parameter(thetas)
-        thetas = update_population(W,thetas,frequencies,dt)
-        
-
-update(W,phases,frequencies,T,dt)
-
-
-## keeps track of population effective frequencies in time
-eff_freqs = calc_eff_freq(system_t)
-
-## keeps track of standard deviation of effective frequencies in time
-freq_std_t = np.std(eff_freqs,axis=1)
-
-
-
-
-## Plots system & order parameter evolving in time
-plot1 = plt.figure(1,dpi=150)
-plt.plot(np.linspace(0,T,int(T/dt)),system_t)
-plt.title("Population Phase Evolution")
-plt.xlabel("time")
-plt.ylabel("phase")
-#plt.savefig("Phases.png")
-
-plt2 = plt.figure(2,dpi=150)
-plt.plot(np.linspace(0,T,int(T/dt)),r_t)
-plt.title("Population Phase Coherence Evolution")
-plt.xlabel("time")
-plt.ylabel("phase coherence r")
-plt.ylim((0,1))
-#plt.savefig("r.png")
-
-
-plot3 = plt.figure(3,dpi=150)
-plt.plot(np.linspace(1,T-1,int(T/dt)-2),eff_freqs)
-plt.title("Population Eff. Frequency Evolution")
-plt.xlabel("time")
-plt.ylabel("eff. freq.")
-
-plot4 = plt.figure(4,dpi=100)
-plt.plot(np.linspace(1,T-1,int(T/dt)-2),freq_std_t)
-plt.title("Effective Frequency Standard Deviation Evolution")
-plt.xlabel("time")
-plt.ylabel("eff. freq. std")
-
-plt.show()
-
-bins = np.linspace(min(-freq_0,-1),max(freq_0,1),50)
-
-plt.hist(eff_freqs[int(0.9*np.shape(system_t)[0])],bins=bins)
-plt.title("Distribution of Effective frequencies at t = 0.9*T")
-plt.xlabel("frequency")
-plt.ylabel("number of oscillators")
-
-
-
-
-tot_time = time.time()-start_time
-
-print(tot_time)
 
 ##2d pca
 #from sklearn.decomposition import PCA
@@ -218,7 +201,10 @@ print(tot_time)
 #ax = fig.gca(projection='3d')
 #indices = np.arange(x.shape[0])
 #plt.plot(x[0,1000:],x[1,1000:],x[2,1000:])
+    
+    
 
+    
 
 
         
