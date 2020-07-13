@@ -95,12 +95,12 @@ def create_envelope(periodic,N):
     
     if not periodic:
         A = np.zeros((1,N))
-        for m in range(1,N+1):
-            r = abs(m-N/2)
+        for m in range(1,N):
+            r = abs(m+1-N/2)
             if r < kappa*N:
-                A[m] = 1
+                A[0,m] = 1
             else:
-                A[m] = np.exp(-a0*((r-kappa*N)/((1-kappa)*N))**2)
+                A[0,m] = np.exp(-a0*((r-kappa*N)/((1-kappa)*N))**2)
             
     else:
         A = np.ones((1,N))
