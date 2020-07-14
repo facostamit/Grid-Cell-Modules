@@ -155,11 +155,11 @@ def simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,
 
 
 # N : number of oscillators
-N = 100
+N = 200
 # k : coupling constant
 k = 4
 # radius : radius of local interactions
-radius = 6
+radius = 10
 # periodic : set to True for periodic topology, set to False for aperiodic topology
 periodic = True
 # defects : set to True to introduce sparse uniformly ditributed defects 
@@ -169,13 +169,13 @@ num_defects = int(0.05*N)
 # freq_0 : initial center of frequency distribution
 freq_0 = 0
 # delta_freq : absolute change in frequency due to gradient. final freq = freq_0 + delta_freq
-delta_freq = 6
+delta_freq = 8
 # freq_std : std of frequency distribution
 freq_std = 0.01
 # gradient : sets functional form of population frequency gradient. gradient ∈ {None,"linear","quadratic","exponential"}
 gradient = "linear" 
 # T : simulation time length
-T = 1000
+T = 1500
 # dt : time step width
 dt = 0.01
 

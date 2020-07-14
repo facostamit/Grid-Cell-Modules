@@ -176,12 +176,13 @@ bins = np.linspace(1,6,80)
 
     
 #Why is this happening?!?!? Understand behavior of frequency
-## look at 3D surface
+## look at 3D surface 
 
 
-## formation of modules?!?!?! experiment with gradient steepness, coupling value,
+## formation of modules?!?!?! experiment with gradient steepness, coupling value.
+# try delta_freq = 4, k = 2, no defects
 
-for i in range(0,100):
+for i in range(0,150):
     plot = plt.figure()
     plt.hist(eff_freqs[int(0.01*i*int(T/dt))],bins=bins)
     
