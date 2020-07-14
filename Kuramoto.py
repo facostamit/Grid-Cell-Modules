@@ -30,8 +30,10 @@ def interaction_matrix(N,k,periodic = False, radius = 1):
 
         if periodic:
             if i != 0:
-                W[0,N-abs(i)] = k/(2**abs(i)-1)
-                W[N-1,abs(i)-1] = k/(2**abs(i)-1)    
+               for j in range(abs(i)):
+                W[j,N-abs(i)+j] = k/(2**(abs(i)-1))
+                W[N-1-j,abs(i)-1-j] = k/(2**(abs(i)-1))
+    
     return W
 
 ## defines oscillator object with attributes phase ([0,2π]) and frequency
@@ -65,10 +67,23 @@ def create_population(N,freq_0,freq_std, gradient = "linear", delta_freq = 1):
     return population
 
 
+## introduces a total of num_defects defects into population.
+## Each defect is implemented as an oscillator that is cut off from interacting with the rest
 
-def introduce_defects(W,num_defects):
+def introduce_defects(W,num_defects,loc_variability = False):
     
-    %%%%%%% function body %%%%%%%%%%%%%
+    N = np.shape(W)[0]
+    indices = np.linspace(0,N-1,num_defects)
+    
+    for i in indices:
+        
+        if loc_variability:
+            x = int(np.random.normal(float(i),2))
+        else:
+            x = int(i)
+        
+        W[:,x] = np.zeros(N)
+        W[x,:] = np.zeros(N)
     
     return W
 
@@ -128,7 +143,9 @@ def simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,
 
     np.savetxt('phase_evolution.dat',system_t)
     
+    
     print(simulation_time)
+    
   
     
 
@@ -140,33 +157,42 @@ def simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,
 # N : number of oscillators
 N = 100
 # k : coupling constant
-k = 1
+k = 4
 # radius : radius of local interactions
-radius = 5
+radius = 6
 # periodic : set to True for periodic topology, set to False for aperiodic topology
 periodic = True
 # defects : set to True to introduce sparse uniformly ditributed defects 
 defects = False
 # num_defects : specify number of defects to introduce 
-num_defects = 0.01*N
+num_defects = int(0.05*N)
 # freq_0 : initial center of frequency distribution
-freq_0 = 0.0
+freq_0 = 0
 # delta_freq : absolute change in frequency due to gradient. final freq = freq_0 + delta_freq
-delta_freq = 1
+delta_freq = 6
 # freq_std : std of frequency distribution
 freq_std = 0.01
 # gradient : sets functional form of population frequency gradient. gradient ∈ {None,"linear","quadratic","exponential"}
-gradient = "linear"
+gradient = "linear" 
 # T : simulation time length
-T = 500
+T = 1000
 # dt : time step width
 dt = 0.01
 
 params = np.array([N,freq_0,T,dt])
 np.savetxt('simulation_params.dat',params)
 
+simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,gradient,T,dt)
 
-simulate(N,k,radius,periodic,defects,freq_0,delta_freq,freq_std,gradient,T,dt)
+
+
+
+
+
+
+
+
+
 
 
     

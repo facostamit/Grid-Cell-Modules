@@ -9,6 +9,7 @@ Processes Data from Kuramoto simulation (Kuramoto.py) and creates plots of relev
 """
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import find_peaks
 
 
 """.....................Helper Functions.........................."""
@@ -32,9 +33,27 @@ def calc_eff_freq(system_t):
     
 def fourier_freqs(system_t):
     
-    %%%%%%% function body %%%%%%%%%%
+    dim1,dim2 = np.shape(system_t)
     
-    return
+    n = int(dim1/4)
+    
+    freq_domain = []
+    
+    primary_freq = np.zeros((dim2,1))
+    
+    for i in range(dim2):
+        freq_domain.append(np.abs(np.fft.rfft(system_t[-n:,i]-np.mean(system_t[-n:,i]))))
+        peak_freqs, peak_info = find_peaks(freq_domain[-1],height = 0)
+        
+        freq = peak_freqs[np.argmax(peak_info["peak_heights"])]
+        
+        primary_freq[i] = freq
+    
+    freq_domain = np.array(freq_domain).T
+
+    
+    return (freq_domain,primary_freq)
+
 
 
 ## Calculates order parameter r (population phase-coherence)
@@ -72,7 +91,7 @@ N,freq_0,T,dt = params
 phase_data = np.loadtxt("phase_evolution.dat")
 
 
-## keeps track of population effective frequencies in time
+# keeps track of population effective frequencies in time
 eff_freqs = calc_eff_freq(phase_data)
     
 ## keeps track of standard deviation of effective frequencies in time
@@ -80,6 +99,9 @@ freq_std_t = np.std(eff_freqs,axis=1)
 
 ## keeps track of system phase-coherence order parameter in time
 r_t = calc_order_parameter(phase_data)
+
+## freq domain
+#freq_domain = fourier_freqs(phase_data)
     
 
 ##2d pca
@@ -103,43 +125,68 @@ r_t = calc_order_parameter(phase_data)
 "........................Generate Plots....................."""
 
 
-plot1 = plt.figure(1,dpi=150)
-plt.plot(np.linspace(0,T,int(T/dt)),phase_data)
-plt.title("Population Phase Evolution")
-plt.xlabel("time")
-plt.ylabel("phase")
-plt.savefig("Phases.png")
+#plot1 = plt.figure(1,dpi=150)
+#plt.plot(np.linspace(0,T,int(T/dt)),phase_data)
+#plt.title("Population Phase Evolution")
+#plt.xlabel("time")
+#plt.ylabel("phase")
+#plt.savefig("Phases.png")
 
-plt2 = plt.figure(2,dpi=150)
-plt.plot(np.linspace(0,T,int(T/dt)),r_t)
-plt.title("Population Phase Coherence Evolution")
-plt.xlabel("time")
-plt.ylabel("phase coherence r")
-plt.ylim((0,1))
-#plt.savefig("r.png")
+#plt2 = plt.figure(2,dpi=150)
+#plt.plot(np.linspace(0,T,int(T/dt)),r_t)
+#plt.title("Population Phase Coherence Evolution")
+#plt.xlabel("time")
+#plt.ylabel("phase coherence r")
+#plt.ylim((0,1))
+##plt.savefig("r.png")
 
 
-plot3 = plt.figure(3,dpi=150)
-plt.plot(np.linspace(1,T-1,int(T/dt)-2),eff_freqs)
-plt.title("Population Eff. Frequency Evolution")
-plt.xlabel("time")
-plt.ylabel("eff. freq.")
+#plot3 = plt.figure(3,dpi=150)
+#plt.plot(np.linspace(1,T-1,int(T/dt)-2),eff_freqs)
+#plt.title("Population Eff. Frequency Evolution")
+#plt.xlabel("time")
+#plt.ylabel("eff. freq.")
 
-plot4 = plt.figure(4,dpi=100)
-plt.plot(np.linspace(1,T-1,int(T/dt)-2),freq_std_t)
-plt.title("Effective Frequency Standard Deviation Evolution")
-plt.xlabel("time")
-plt.ylabel("eff. freq. std")
+#plot4 = plt.figure(4,dpi=100)
+#plt.plot(np.linspace(1,T-1,int(T/dt)-2),freq_std_t)
+#plt.title("Effective Frequency Standard Deviation Evolution")
+#plt.xlabel("time")
+#plt.ylabel("eff. freq. std")
+#
+#plt.show()
 
-plt.show()
+#bins = np.linspace(min(-freq_0,-1),max(freq_0,1),50)
+#
+bins = np.linspace(1,6,80)
 
-bins = np.linspace(min(-freq_0,-1),max(freq_0,1),50)
+#plt.hist(eff_freqs[int(0.9*int(T/dt))],bins=bins)
+#plt.title("Distribution of Effective frequencies at t = 0.9*T")
+#plt.xlabel("frequency")
+#plt.ylabel("number of oscillators")
 
-plt.hist(eff_freqs[int(0.9*int(T/dt))],bins=bins)
-plt.title("Distribution of Effective frequencies at t = 0.9*T")
-plt.xlabel("frequency")
-plt.ylabel("number of oscillators")
 
+
+
+
+#show eff. freq behavior during time (90,000 - 10,000) incrementing oscillator number
+#
+#for i in range(100):
+#    plot = plt.figure()
+#    plt.plot(eff_freqs[90000:100000,i])
+
+    
+#Why is this happening?!?!? Understand behavior of frequency
+## look at 3D surface
+
+
+## formation of modules?!?!?! experiment with gradient steepness, coupling value,
+
+for i in range(0,100):
+    plot = plt.figure()
+    plt.hist(eff_freqs[int(0.01*i*int(T/dt))],bins=bins)
+    
+    
+    
 
 
 
