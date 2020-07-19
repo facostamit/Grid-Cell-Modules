@@ -48,7 +48,7 @@ class oscillator:
 ## By default, uniform mean frequency (graditn = None). 
 ## set gradient = "linear","quadratic", or "exp" to introduce 
 ##      corresponding frequency gradient starting at freq_0 and ending at freq_final    
-def create_population(N,freq_0,freq_std, gradient = "linear", delta_freq = 1):
+def create_population(N,freq_0,freq_std, gradient = None, delta_freq = 1):
     population = []
 
     for i in range(N):
@@ -90,28 +90,31 @@ def introduce_defects(W,num_defects,loc_variability = False):
 
 
 ## single time step update to oscillator population according to Kuramoto model 
-def update_population(W,thetas,frequencies,dt):
-    thetas += dt*(frequencies+np.cos(thetas)*(W.dot(np.sin(thetas)))-np.sin(thetas)*(W.dot(np.cos(thetas))))
+def update_population(W,total_phases,thetas,frequencies,dt):
+    delta = dt*(frequencies+np.cos(thetas)*(W.dot(np.sin(thetas)))-np.sin(thetas)*(W.dot(np.cos(thetas))))
+    thetas += delta
     thetas = np.mod(thetas,2*np.pi)
-    return thetas
+    total_phases += delta
+    return (thetas, total_phases)
 
 
 
 ## models evolution of population for time T
-def update_system(W,thetas,frequencies,T,dt):
+def update_system(W,total_phases,thetas,frequencies,T,dt,N):
     
     ## keeps track of population pattern (phases) in time 
     system_t  = np.zeros((int(T/dt),N))
     
-    ## keeps track of system phase-coherence order parameter in time
-    #r_t = np.zeros(int(T/dt))
+    system_t_total = np.zeros((int(T/dt),N))
     
-    for iter in range(int(T/dt)):
-        system_t[iter,:] = thetas.flatten()
+
+    for t in range(int(T/dt)):
+        system_t[t,:] = thetas.flatten()
+        system_t_total[t,:] = total_phases.flatten()
         #r_t[iter] = calc_order_parameter(thetas)
-        thetas = update_population(W,thetas,frequencies,dt)
+        thetas, total_phases = update_population(W,total_phases,thetas,frequencies,dt)
     
-    return system_t #,r_t)
+    return (system_t, system_t_total)
 
 
 
@@ -131,17 +134,19 @@ def simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,
     
     ## Nx1 vectors containing the phase and frequency of each oscillator 
     phases = np.array([[oscillator.phase for oscillator in population]]).T
+    total_phases = np.array([[oscillator.phase for oscillator in population]]).T
     frequencies = np.array([[oscillator.frequency for oscillator in population]]).T
     
     ## Interaction matrix in sparse format
     W = csr_matrix(W)
     
     ##updates all oscillators 
-    system_t = update_system(W,phases,frequencies,T,dt)
+    system_t, system_t_total = update_system(W,total_phases,phases,frequencies,T,dt,N)
     
     simulation_time = time.time() - start_time
 
     np.savetxt('phase_evolution.dat',system_t)
+    np.savetxt('total_phases.dat',system_t_total)
     
     
     print(simulation_time)
@@ -155,9 +160,9 @@ def simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,
 
 
 # N : number of oscillators
-N = 200
+N = 100
 # k : coupling constant
-k = 4
+k = 5
 # radius : radius of local interactions
 radius = 10
 # periodic : set to True for periodic topology, set to False for aperiodic topology
@@ -169,13 +174,13 @@ num_defects = int(0.05*N)
 # freq_0 : initial center of frequency distribution
 freq_0 = 0
 # delta_freq : absolute change in frequency due to gradient. final freq = freq_0 + delta_freq
-delta_freq = 8
+delta_freq = 5
 # freq_std : std of frequency distribution
 freq_std = 0.01
 # gradient : sets functional form of population frequency gradient. gradient ∈ {None,"linear","quadratic","exponential"}
 gradient = "linear" 
 # T : simulation time length
-T = 1500
+T = 1000
 # dt : time step width
 dt = 0.01
 

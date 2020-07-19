@@ -15,17 +15,19 @@ from scipy.signal import find_peaks
 """.....................Helper Functions.........................."""
 
 ## Calculates numerical time derivative of oscillator phases at all times t 
-def calc_eff_freq(system_t):
+
+def calc_eff_freq(system_t,dt):
     size = np.shape(system_t)
     eff_freqs_t = np.zeros((size[0]-2,size[1]))
     for t in range(1,size[0]-1):  
         eff_freqs = np.zeros(size[1])
         for i in range(size[1]):
-            delta = (system_t[t+1,i]-system_t[t-1,i])%(2*np.pi)
-            diff = min(delta,2*np.pi-delta)
-            eff_freqs[i] = diff/(2*dt)
+            delta = (system_t[t+1,i]-system_t[t-1,i])
+            #diff = min(delta,2*np.pi-delta)
+            eff_freqs[i] = delta/(2*dt)
         eff_freqs_t[t-1,:] = eff_freqs.flatten() 
     return eff_freqs_t
+
 
 
 
@@ -83,22 +85,39 @@ def eff_freqs_std(eff_freqs):
 """.......................Load & Process Data........................"""
 
 
-## Simulation parameters
-params = np.loadtxt("simulation_params.dat")
+### Simulation parameters
+#params = np.loadtxt("simulation_params.dat")
+#N,freq_0,T,dt = params
+#
+### Phase evolution data
+#phase_data = np.loadtxt("phase_evolution.dat")
+#
+#phases = np.loadtxt("total_phases.dat")
+#
+#eff_freqs = calc_eff_freq(phases,dt)
+
+
+# Simulation parameters
+params = np.loadtxt("KSsimulation_params.dat")
 N,freq_0,T,dt = params
 
 ## Phase evolution data
-phase_data = np.loadtxt("phase_evolution.dat")
+phase_data = np.loadtxt("KSphase_evolution.dat")
+
+phases = np.loadtxt("KStotal_phases.dat")
+
+#eff_freqs = calc_eff_freq(phases,dt)
+
 
 
 # keeps track of population effective frequencies in time
-eff_freqs = calc_eff_freq(phase_data)
+#eff_freqs = calc_eff_freq(phase_data)
     
 ## keeps track of standard deviation of effective frequencies in time
-freq_std_t = np.std(eff_freqs,axis=1)
+#freq_std_t = np.std(eff_freqs,axis=1)
 
 ## keeps track of system phase-coherence order parameter in time
-r_t = calc_order_parameter(phase_data)
+#r_t = calc_order_parameter(phase_data)
 
 ## freq domain
 #freq_domain = fourier_freqs(phase_data)
@@ -125,12 +144,20 @@ r_t = calc_order_parameter(phase_data)
 "........................Generate Plots....................."""
 
 
+plot1 = plt.figure(1,dpi=150)
+plt.plot(np.linspace(0,T,int(T/dt)),phase_data)
+plt.title("Population Phase Evolution")
+plt.xlabel("time")
+plt.ylabel("phase")
+plt.savefig("Phases.png")
+
 #plot1 = plt.figure(1,dpi=150)
-#plt.plot(np.linspace(0,T,int(T/dt)),phase_data)
+#plt.plot(phase_data)
 #plt.title("Population Phase Evolution")
 #plt.xlabel("time")
 #plt.ylabel("phase")
 #plt.savefig("Phases.png")
+
 
 #plt2 = plt.figure(2,dpi=150)
 #plt.plot(np.linspace(0,T,int(T/dt)),r_t)
@@ -147,6 +174,14 @@ r_t = calc_order_parameter(phase_data)
 #plt.xlabel("time")
 #plt.ylabel("eff. freq.")
 
+#plot3 = plt.figure(3,dpi=150)
+#plt.plot(eff_freqs)
+#plt.title("Population Eff. Frequency Evolution")
+#plt.xlabel("time")
+#plt.ylabel("eff. freq.")
+
+
+
 #plot4 = plt.figure(4,dpi=100)
 #plt.plot(np.linspace(1,T-1,int(T/dt)-2),freq_std_t)
 #plt.title("Effective Frequency Standard Deviation Evolution")
@@ -157,8 +192,8 @@ r_t = calc_order_parameter(phase_data)
 
 #bins = np.linspace(min(-freq_0,-1),max(freq_0,1),50)
 #
-bins = np.linspace(1,6,80)
-
+#bins = np.linspace(1,6,80)
+#
 #plt.hist(eff_freqs[int(0.9*int(T/dt))],bins=bins)
 #plt.title("Distribution of Effective frequencies at t = 0.9*T")
 #plt.xlabel("frequency")
@@ -169,8 +204,9 @@ bins = np.linspace(1,6,80)
 
 
 #show eff. freq behavior during time (90,000 - 10,000) incrementing oscillator number
-#
-#for i in range(100):
+
+
+#for i in range(200):
 #    plot = plt.figure()
 #    plt.plot(eff_freqs[90000:100000,i])
 
@@ -182,9 +218,11 @@ bins = np.linspace(1,6,80)
 ## formation of modules?!?!?! experiment with gradient steepness, coupling value.
 # try delta_freq = 4, k = 2, no defects
 
-for i in range(0,150):
-    plot = plt.figure()
-    plt.hist(eff_freqs[int(0.01*i*int(T/dt))],bins=bins)
+#for i in range(0,120):
+#    plot = plt.figure()
+#    plt.hist(eff_freqs[int(0.01*i*int(T/dt))],bins=bins)
+    
+    
     
     
     
