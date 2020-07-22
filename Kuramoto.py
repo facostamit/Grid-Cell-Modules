@@ -6,11 +6,8 @@ Simulates 1D Kuramoto model with local coupling
 
 saves output data as array of phase evolutions in "phase_evolution.dat"
 
-Things to add: (1) Play around with parameters: population size, coupling, freq distribution width,
-(2) Explore non-uniform oscillator coupling (?) 
-
 """
-
+import math
 import numpy as np
 from scipy.sparse import csr_matrix
 import time
@@ -25,16 +22,38 @@ def interaction_matrix(N,k,periodic = False, radius = 1):
    
     W = np.zeros((N,N))
     for i in range(-radius,radius+1):
-        vec = (i!=0)*(k/(2**(abs(i)-1)))*np.ones(N-abs(i))
+        #vec = (i!=0)*(k/(2**(abs(i)-1)))*np.ones(N-abs(i))
+        vec = (i!=0)*(k)*np.ones(N-abs(i))
         W += np.diag(vec,i)
 
         if periodic:
             if i != 0:
                for j in range(abs(i)):
-                W[j,N-abs(i)+j] = k/(2**(abs(i)-1))
-                W[N-1-j,abs(i)-1-j] = k/(2**(abs(i)-1))
+                W[j,N-abs(i)+j] = k#/(2**(abs(i)-1))
+                W[N-1-j,abs(i)-1-j] = k#/(2**(abs(i)-1))
     
     return W
+
+
+
+
+def dist(N,i,j):
+    
+    return min(abs(i-j),N-abs(i-j))
+
+
+
+def time_delay_matrix(N,alpha):
+    N = int(N)
+    A = np.zeros((N,N))
+    
+    for i in range(N):
+        for j in range(N):
+            A[i,j] = alpha*2*np.pi*dist(N,i,j)/(2*N)
+    
+    return A
+    
+    
 
 ## defines oscillator object with attributes phase ([0,2π]) and frequency
 class oscillator:
@@ -52,7 +71,7 @@ def create_population(N,freq_0,freq_std, gradient = None, delta_freq = 1):
     population = []
 
     for i in range(N):
-        phase_i = 2*np.pi*np.random.rand()
+        phase_i = 0.2*np.pi*np.random.rand()
         if gradient != None:
             if gradient == "linear":
                 freq_i = freq_0+(i/(N-1))*delta_freq + np.random.normal(0,freq_std)
@@ -90,8 +109,19 @@ def introduce_defects(W,num_defects,loc_variability = False):
 
 
 ## single time step update to oscillator population according to Kuramoto model 
+
+
+#def update_population(W,total_phases,thetas,frequencies,dt):
+#    delta = dt*(frequencies+np.cos(thetas)*(W.dot(np.sin(thetas)))-np.sin(thetas)*(W.dot(np.cos(thetas))))
+#    thetas += delta
+#    thetas = np.mod(thetas,2*np.pi)
+#    total_phases += delta
+#    return (thetas, total_phases)
+
+
+
 def update_population(W,total_phases,thetas,frequencies,dt):
-    delta = dt*(frequencies+np.cos(thetas)*(W.dot(np.sin(thetas)))-np.sin(thetas)*(W.dot(np.cos(thetas))))
+    delta = dt*(frequencies+np.imag(np.exp(-1j*thetas)*W.dot(np.exp(1j*thetas))))
     thetas += delta
     thetas = np.mod(thetas,2*np.pi)
     total_phases += delta
@@ -107,8 +137,8 @@ def update_system(W,total_phases,thetas,frequencies,T,dt,N):
     
     system_t_total = np.zeros((int(T/dt),N))
     
-
     for t in range(int(T/dt)):
+        
         system_t[t,:] = thetas.flatten()
         system_t_total[t,:] = total_phases.flatten()
         #r_t[iter] = calc_order_parameter(thetas)
@@ -118,8 +148,9 @@ def update_system(W,total_phases,thetas,frequencies,T,dt,N):
 
 
 
+
 ## Runs simulation 
-def simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,gradient,T,dt):
+def simulate(N,k,alpha,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,gradient,T,dt):
     
     start_time = time.time()
     
@@ -128,6 +159,10 @@ def simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,
     
     if defects:
         W = introduce_defects(W,num_defects)
+           
+    A = time_delay_matrix(N,alpha)
+    
+    W = W*np.exp(-1j*A)
     
     ## population of N oscillators 
     population = create_population(N,freq_0,freq_std,gradient = gradient,delta_freq = delta_freq)
@@ -151,6 +186,7 @@ def simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,
     
     print(simulation_time)
     
+    return frequencies
   
     
 
@@ -162,7 +198,10 @@ def simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,
 # N : number of oscillators
 N = 100
 # k : coupling constant
-k = 5
+#k = 0.0663
+k = 0.12
+# alpha: time delay constant
+alpha = 0.6
 # radius : radius of local interactions
 radius = 10
 # periodic : set to True for periodic topology, set to False for aperiodic topology
@@ -174,7 +213,7 @@ num_defects = int(0.05*N)
 # freq_0 : initial center of frequency distribution
 freq_0 = 0
 # delta_freq : absolute change in frequency due to gradient. final freq = freq_0 + delta_freq
-delta_freq = 5
+delta_freq = 6
 # freq_std : std of frequency distribution
 freq_std = 0.01
 # gradient : sets functional form of population frequency gradient. gradient ∈ {None,"linear","quadratic","exponential"}
@@ -184,21 +223,53 @@ T = 1000
 # dt : time step width
 dt = 0.01
 
+
+
 params = np.array([N,freq_0,T,dt])
 np.savetxt('simulation_params.dat',params)
 
-simulate(N,k,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,gradient,T,dt)
+freqs = simulate(N,k,alpha,radius,periodic,defects,num_defects,freq_0,delta_freq,freq_std,gradient,T,dt)
 
 
 
 
 
+""".....................Other stuff...................."""
 
 
 
 
 
+def find_uc(freqs,inc = 0.0000001,tolerance = 0.001, u0 = 0.01):
+    
+    N = len(freqs)
+    
+    def cost(u):
+        tot = 0
+        for j in range(N):
+            tot += 2*np.sqrt(1-(freqs[j]/u)**2) - 1/(np.sqrt(1-(freqs[j]/u)**2))
+        return tot
+    
+    u = u0
 
+    y = cost(u)
+    step = 0
+    while math.isnan(abs(y)) or abs(y) > tolerance:
+        step += 1
+        u += inc
+        y = cost(u)
+        if u > 2 or step > 1000000:
+            return "failure"
+    
+    return u
+
+
+#uc = find_uc(freqs)
+
+
+
+
+#print(uc)
 
     
     

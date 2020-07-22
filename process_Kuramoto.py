@@ -86,25 +86,25 @@ def eff_freqs_std(eff_freqs):
 
 
 ### Simulation parameters
-#params = np.loadtxt("simulation_params.dat")
-#N,freq_0,T,dt = params
+params = np.loadtxt("simulation_params.dat")
+N,freq_0,T,dt = params
 #
 ### Phase evolution data
-#phase_data = np.loadtxt("phase_evolution.dat")
+phase_data = np.loadtxt("phase_evolution.dat")
 #
-#phases = np.loadtxt("total_phases.dat")
+phases = np.loadtxt("total_phases.dat")
 #
-#eff_freqs = calc_eff_freq(phases,dt)
+eff_freqs = calc_eff_freq(phases,dt)
 
 
 # Simulation parameters
-params = np.loadtxt("KSsimulation_params.dat")
+#params = np.loadtxt("KSsimulation_params.dat")
 N,freq_0,T,dt = params
 
 ## Phase evolution data
-phase_data = np.loadtxt("KSphase_evolution.dat")
+#phase_data = np.loadtxt("KSphase_evolution.dat")
 
-phases = np.loadtxt("KStotal_phases.dat")
+#phases = np.loadtxt("KStotal_phases.dat")
 
 #eff_freqs = calc_eff_freq(phases,dt)
 
@@ -139,17 +139,20 @@ phases = np.loadtxt("KStotal_phases.dat")
 #indices = np.arange(x.shape[0])
 #plt.plot(x[0,1000:],x[1,1000:],x[2,1000:])
 
+m = np.mean(eff_freqs,axis=0)
+plt.plot(m,'o')
+
 
 
 "........................Generate Plots....................."""
 
 
-plot1 = plt.figure(1,dpi=150)
-plt.plot(np.linspace(0,T,int(T/dt)),phase_data)
-plt.title("Population Phase Evolution")
-plt.xlabel("time")
-plt.ylabel("phase")
-plt.savefig("Phases.png")
+#plot1 = plt.figure(1,dpi=150)
+#plt.plot(np.linspace(0,T,int(T/dt)),phase_data)
+#plt.title("Population Phase Evolution")
+#plt.xlabel("time")
+#plt.ylabel("phase")
+#plt.savefig("Phases.png")
 
 #plot1 = plt.figure(1,dpi=150)
 #plt.plot(phase_data)

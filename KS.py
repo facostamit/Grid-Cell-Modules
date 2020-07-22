@@ -121,17 +121,17 @@ def simulate(N_pop,N,k,alpha,g,radius,periodic,defects,num_defects,freq_0,delta_
   
 """ ..........................Simulation................................. """
 
-N_pop = 1
+N_pop = 10
 
 g = 0
 
 
-alpha = 1.5
+alpha = 0
 
 # N : number of oscillators
-N = 50
+N = 20
 # k : coupling constant
-k = 0.1
+k = 0.0
 # radius : radius of local interactions
 radius = 1
 # periodic : set to True for periodic topology, set to False for aperiodic topology
@@ -149,7 +149,7 @@ freq_std = 0.00
 # gradient : sets functional form of population frequency gradient. gradient ∈ {None,"linear","quadratic","exponential"}
 gradient = None#"linear" 
 # T : simulation time length
-T = 88000
+T = 1000
 # dt : time step width
 dt = 0.01
 
