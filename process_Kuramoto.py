@@ -139,10 +139,29 @@ N,freq_0,T,dt = params
 #indices = np.arange(x.shape[0])
 #plt.plot(x[0,1000:],x[1,1000:],x[2,1000:])
 
-m = np.mean(eff_freqs,axis=0)
-plt.plot(m,'o')
+x = np.linspace(0,N,N)
+y = np.mean(eff_freqs[20000:,:],axis=0)
+yerr = np.std(eff_freqs[20000:,:],axis=0)
+
+plt.errorbar(x,y,yerr,alpha = 0.3)
 
 
+def errorfill(x, y, yerr, color=None, alpha_fill=0.3, ax=None):
+    ax = ax if ax is not None else plt.gca()
+    if color is None:
+        color = ax._get_lines.color_cycle.next()
+    if np.isscalar(yerr) or len(yerr) == len(y):
+        ymin = y - yerr
+        ymax = y + yerr
+    elif len(yerr) == 2:
+        ymin, ymax = yerr
+    a = plt.figure(1,dpi=200)
+    ax.plot(x, y, color=color,marker="o",figure=a)
+    ax.fill_between(x, ymax, ymin, color="red", alpha=alpha_fill)
+    ax.set_xlabel("Oscillator")
+    ax.set_ylabel("⟨dθ/dt⟩")
+
+errorfill(x,y,yerr,color = "black")
 
 "........................Generate Plots....................."""
 

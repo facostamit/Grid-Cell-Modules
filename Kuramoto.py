@@ -9,7 +9,7 @@ saves output data as array of phase evolutions in "phase_evolution.dat"
 """
 import math
 import numpy as np
-from scipy.sparse import csr_matrix
+import scipy
 import time
 
 
@@ -55,7 +55,7 @@ def time_delay_matrix(N,alpha):
     
     
 
-## defines oscillator object with attributes phase ([0,2π]) and frequency
+## defines oscillator object with attributes phase ([0,2pi]) and frequency
 class oscillator:
     def __init__(self,phase,frequency):
         self.phase = phase
@@ -173,7 +173,7 @@ def simulate(N,k,alpha,radius,periodic,defects,num_defects,freq_0,delta_freq,fre
     frequencies = np.array([[oscillator.frequency for oscillator in population]]).T
     
     ## Interaction matrix in sparse format
-    W = csr_matrix(W)
+    W = scipy.sparse.csr_matrix(W)
     
     ##updates all oscillators 
     system_t, system_t_total = update_system(W,total_phases,phases,frequencies,T,dt,N)
@@ -216,10 +216,10 @@ freq_0 = 0
 delta_freq = 6
 # freq_std : std of frequency distribution
 freq_std = 0.01
-# gradient : sets functional form of population frequency gradient. gradient ∈ {None,"linear","quadratic","exponential"}
+# gradient : sets functional form of population frequency gradient. gradient one of {None,"linear","quadratic","exponential"}
 gradient = "linear" 
 # T : simulation time length
-T = 1000
+T = 1200
 # dt : time step width
 dt = 0.01
 
