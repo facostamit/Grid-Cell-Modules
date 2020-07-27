@@ -84,7 +84,7 @@ def gridcelldevelopment1D():
         
         spk = zeros((N_tot,NT));
     
-        for t in range(1,NT+1): #INNER time loop (T sec)
+        for t in range(1,NT): #INNER time loop (T sec)
         
             #Neural dynamics
             
